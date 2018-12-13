@@ -10,13 +10,17 @@ make
 ```
 
 ## Usage
+Show tabular output (default) with header:
 ```
-# Show tabular output with header
 ./bamcov -H test.sam
+```
+![screenshot 2018-12-13 17 17 06](https://user-images.githubusercontent.com/516060/49970976-fc1f7800-fefa-11e8-9ce3-862ab0ae69ad.png)
 
-# Show histogram output 
+Show histogram output:
+```
 ./bamcov -m test.sam
 ```
+![screenshot 2018-12-13 17 18 48](https://user-images.githubusercontent.com/516060/49971052-2c671680-fefb-11e8-99de-f0758213adac.png)
 
-Author: Florian P Breitwieser
-based on code of `samtools depth` by Heng Li and samtools contributors.
+
+Author: Florian P Breitwieser, based on code of `samtools depth` by Heng Li and samtools contributors.
