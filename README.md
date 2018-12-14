@@ -6,6 +6,7 @@ Prerequisites:
  - htslib
 ```
 git clone https://github.com/fbreitwieser/bamcov
+cd bamcov
 make
 ```
 
