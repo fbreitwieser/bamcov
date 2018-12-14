@@ -1,9 +1,22 @@
 
 CC=gcc
-CFLAGS=-Wall -lm -lhts -std=c99 $(LDFLAGS) $(CPPFLAGS) -I/usr/local/include -L/usr/local/lib
+CFLAGS=-std=c99 -Wall -lm -lhts
+INCLUDE=-Ihtslib
 
-ifneq ($(HTSLIB),)
-	CFLAGS+=-I$(HTSLIB)/include -L$(HTSLIB)/lib
+## From htslib Makefile: specify shlib flavor based on platform
+# $(shell), :=, and ifeq/.../endif are GNU Make-specific.  If you don't have
+# GNU Make, comment out the parts of these conditionals that don't apply.
+ifneq "$(origin PLATFORM)" "file"
+PLATFORM := $(shell uname -s)
+endif
+ifeq "$(PLATFORM)" "Darwin"
+HTSLIB=libhts.dylib
+else ifeq "$(findstring CYGWIN,$(PLATFORM))" "CYGWIN"
+HTSLIB=cyghts-$(LIBHTS_SOVERSION).dll
+else ifeq "$(findstring MSYS,$(PLATFORM))" "MSYS"
+HTSLIB=hts-$(LIBHTS_SOVERSION).dll
+else
+HTSLIB=libhts.so
 endif
 
 all: bamcov
@@ -14,12 +27,18 @@ clean:
 html-header.hpp: bamcov.html
 	xxd -i $^ > $@
 
-bamcov: bamcov.c
-	$(CC) $(CCFLAGS) -o $@ $^ $(CFLAGS)
+bamcov: bamcov.c htslib/$(HTSLIB)
+	$(CC) $(CCFLAGS) $(INCLUDE) -o $@ $^ $(CFLAGS)
 
 test: bamcov
 	./bamcov -H test.sam | column -ts$$'\t'
 	./bamcov -m test.sam
 
-bamcov.tar.gz: bamcov.c bamcov REPORT README task_CPP_prog.bam
+htslib:
+	git clone https://github.com/samtools/htslib
+
+htslib/$(HTSLIB): htslib
+	cd htslib && make $(HTSLIB)
+
+bamcov.tar.gz: bamcov bamcov.c README.md Makefile test.bam test.bam.bai
 	tar zcvf $@ $^
