@@ -1,7 +1,7 @@
 
 CC=gcc
-CFLAGS=-std=c99 -Wall -lm -lhts
-INCLUDE=-Ihtslib
+CFLAGS=-std=c99 -Wall -lm -lz -llzma -lbz2
+INCLUDE=-Ihtslib -Lhtslib
 
 ## From htslib Makefile: specify shlib flavor based on platform
 # $(shell), :=, and ifeq/.../endif are GNU Make-specific.  If you don't have
@@ -19,7 +19,7 @@ else
 HTSLIB=libhts.so
 endif
 
-all: bamcov
+all: bamcov bamcov-static
 
 clean:
 	rm -v bamcov
@@ -28,7 +28,10 @@ html-header.hpp: bamcov.html
 	xxd -i $^ > $@
 
 bamcov: bamcov.c htslib/$(HTSLIB)
-	$(CC) $(CCFLAGS) $(INCLUDE) -o $@ $^ $(CFLAGS)
+	$(CC) $(CCFLAGS) $(INCLUDE) -o $@ bamcov.c $(CFLAGS) -lhts
+
+bamcov-static: bamcov.c htslib/libhts.a
+	gcc -Ihtslib -o $@ $^ $(CFLAGS)
 
 test: bamcov
 	./bamcov -H test.sam | column -ts$$'\t'
