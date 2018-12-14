@@ -41,9 +41,6 @@ Use full window width for histogram:
 For high-res mode with 80 steps on the histogram y-axis instead of 20, use the flags `-mU`. To see if your terminal/font support it check with `./bamcov -v`. If the output looks fine without empty blocks, you are good to go to user the `-U` flag.
 
 This tool is based on [htslib](https://github.com/samtools/htslib) and may be integrated in [samtools](https://github.com/samtools/samtools) ([PR #992](https://github.com/samtools/samtools/pull/992)). This standalone version will implement new features and will be maintained on its own.
-=======
-./bamcov -r chr1:100-1000 test.bam
-```
 
-Author: Florian P Breitwieser, based on code of `samtools depth` by Heng Li and samtools contributors.
+Author: Florian Breitwieser, based on code of `samtools depth` by Heng Li and samtools contributors.
 
