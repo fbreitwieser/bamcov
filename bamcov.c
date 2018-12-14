@@ -105,6 +105,7 @@ static int usage(int status) {
                     "  -F <int>          Omit all reads with bits in <int> set (default: unmapped, secondary, qcfail, and duplicates)\n"
                     "  -d                Clear flags for -F option (including defaults).\n"
                     "  -f <int>          Omit all reads which do not have all bits in <int> set.\n"
+                    "  -L FILE           Process files specified, one per line, from <file> instead of positional arguments."
                     "  -v                version of this command\n"
                     "\nGlobal options:\n");
 
