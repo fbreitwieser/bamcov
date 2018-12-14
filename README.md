@@ -2,10 +2,9 @@
 Quick visualization of sequence coverage and alignment. This tool is based on [htslib](https://github.com/samtools/htslib) and may be integrated in [samtools](https://github.com/samtools/samtools) ([PR #992](https://github.com/samtools/samtools/pull/992)). This repo is for testing new code prior to submitting it to samtools.
 
 ## Installation
-Prerequisites:
- - htslib (see FAQ below for installation instructions)
+Make sure to clone the repository with `--recurse-submodules` to get the htslib, otherwise it is necessary to type `git submodule update --init --recursive` in the cloned repository.
 ```
-git clone https://github.com/fbreitwieser/bamcov
+git clone --recurse-submodules https://github.com/fbreitwieser/bamcov
 cd bamcov
 make
 ```
@@ -30,16 +29,3 @@ Show specific region (requires BAM index):
 
 Author: Florian P Breitwieser, based on code of `samtools depth` by Heng Li and samtools contributors.
 
-## FAQ
-#### Getting errors `'bamcov.c:(.text+0x47e): undefined reference to 'hts_itr_next'`, etc'
-The linker does not see the hts library, see installing htslib. 
-
-#### Installing htslib
-For full instructions on installing htslib, see htslib's [INSTALL](https://github.com/samtools/htslib/blob/develop/INSTALL).
-````
-git clone https://github.com/samtools/htslib
-cd htslib
-./configure
-make
-sudo make install
-```
