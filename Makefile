@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=-std=c99 -Wall -lm -lz -llzma -lbz2
+CFLAGS=-std=c99 -Wall -lm -lz -llzma -lbz2 -pthread
 INCLUDE=-Ihtslib -Lhtslib
 
 ## From htslib Makefile: specify shlib flavor based on platform
@@ -39,6 +39,9 @@ test: bamcov
 
 htslib:
 	git clone https://github.com/samtools/htslib
+
+htslib/libhts.a: htslib
+	cd htslib && make libhts.a
 
 htslib/$(HTSLIB): htslib
 	cd htslib && make $(HTSLIB)
