@@ -102,9 +102,8 @@ static int usage(int status) {
                     "  -r <chr:from-to>  Show region on chromosome chr. \n"
                     "  -h                help (this page)\n"
                     "  -v                version of this command\n"
-                    "  -F <int>          Omit all reads with bits in <int> set (default: unmapped, secondary, qcfail, and duplicates)\n"
-                    "  -d                Clear flags for -F option (including defaults).\n"
-                    "  -f <int>          Omit all reads which do not have all bits in <int> set.\n"
+                    "  --ff <int>        Omit all reads with bits in <int> set (default: unmapped, secondary, qcfail, and duplicates)\n"
+                    "  --rf <int>        Omit all reads which do not have all bits in <int> set.\n"
                     "  -L FILE           Process files specified, one per line, from <file> instead of positional arguments."
                     "  -v                version of this command\n"
                     "\nGlobal options:\n");
@@ -331,23 +330,28 @@ int main_coverage(int argc, char *argv[]) {
 
 #ifdef INSAMTOOLS
     sam_global_args ga = SAM_GLOBAL_ARGS_INIT;
+#endif
     static const struct option lopts[] = {
+#ifdef INSAMTOOLS
         SAM_OPT_GLOBAL_OPTIONS('-', 0, '-', '-', 0, '-'),
+#endif
+        {"rf", required_argument, NULL, 1},   // require flag
+        {"ff", required_argument, NULL, 2}, // filter flag
         { NULL, 0, NULL, 0 }
     };
-#endif
 
     // parse the command line
     int c;
-#ifdef INSAMTOOLS
-    while ((c = getopt_long(argc, argv, "o:l:q:Q:hHw:vr:f:F:L:md", lopts, NULL)) != -1) {
-#else
-    while ((c = getopt(argc, argv, "o:l:q:Q:hHw:vr:f:F:L:md")) != -1) {
-#endif
+    while ((c = getopt_long(argc, argv, "o:l:q:Q:hHw:vr:L:m", lopts, NULL)) != -1) {
             switch (c) {
-                case 'd': fail_flags = 0; break;
-                case 'f': required_flags |= atoi(optarg); break;
-                case 'F': fail_flags |= atoi(optarg); break;
+                case 1:
+                        if ((required_flags = bam_str2flag(optarg)) < 0) {
+                             fprintf(stderr,"Could not parse --rf %s\n", optarg); return 1;
+                         }
+                case 2:
+                        if ((fail_flags = bam_str2flag(optarg)) < 0) {
+                             fprintf(stderr,"Could not parse --ff %s\n", optarg); return 1;
+                         }
                 case 'o': opt_output_file = optarg; break;
                 case 'l': opt_min_len = atoi(optarg); break;
                 case 'q': opt_min_baseQ = atoi(optarg); break;
