@@ -95,13 +95,14 @@ int read_file_list(const char *file_list, int *n, char **argv[]);
 #endif
 
 static int usage(int status) {
-    fprintf(stderr, "\nUsage: samtools coverage [options] in1.bam [in2.bam [...]]\n"
+    fprintf(stderr, "Usage: bamcov [options] in1.bam [in2.bam [...]]\n\n"
                     "Input options:\n"
                     "  -b FILE           Process files specified, one per line, from <file> instead of positional arguments.\n"
                     "  -l <int>          read length threshold - ignore reads shorter than <int> [0]\n"
                     "  -q <int>          base quality threshold [0]\n"
                     "  -Q <int>          mapping quality threshold [0]\n"
-                    "  --ff <int|str>    Filter flags: Omit all reads with bits in mask set. See samtools flags command for explanations [default: UNMAP,SECONDARY,QCFAIL,DUP]\n"
+                    "  --ff <int|str>    Filter flags: Omit all reads with bits in mask set [default: UNMAP,SECONDARY,QCFAIL,DUP]. \n"
+                    "                    See samtools flags command for explanations \n"
                     "  --rf <int|str>    Required flags: Omit all reads which do not have all bits in mask set []\n"
                     "\nOutput options:\n"
                     "  -o FILE           where to write output to [stdout]\n"
@@ -120,16 +121,16 @@ static int usage(int status) {
 #endif
 
     fprintf(stderr, 
-            "\nThe tabular output is a simple tab-seperate table with 7 columns:\n"
-                    "  1. Reference name / chromosome\n"
-                    "  2. Start position\n"
-                    "  3. End position (or sequence length)\n"
-                    "  4. Number reads aligned to the region\n"
-                    "  5. Number of covered bases with depth >= 1\n"
-                    "  6. Percent of covered bases\n"
-                    "  7. Average coverage depth\n"
-                    "  8. Average baseQ in covered region\n"
-                    "  9. Average mapQ of selected reads\n"
+            "\nThe tabular output is a simple tab-seperate table with 9 columns:\n"
+                    "  CHROM           Reference name / chromosome\n"
+                    "  START           Start position\n"
+                    "  END             End position (or sequence length)\n"
+                    "  N_READS         Number reads aligned to the region (after filtering)\n"
+                    "  N_COVERED_BASES Number of covered bases with depth >= 1\n"
+                    "  PERCENT_COVERED Percent of covered bases\n"
+                    "  AVG_COV         Average coverage depth\n"
+                    "  AVG_BASEQ       Average baseQ in covered region\n"
+                    "  AVG_MAPQ        Average mapQ of selected reads\n"
                     );
 
     return status;
