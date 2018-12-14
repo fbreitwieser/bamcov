@@ -597,7 +597,6 @@ coverage_end:
     }
 
     free(data); 
-    free(opt_reg);
     if (opt_file_list) {
         for (i = 0; i < n_bam_files; ++i) {
             free(argv[i]);
