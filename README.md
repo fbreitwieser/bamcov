@@ -39,7 +39,7 @@ Use full window width for histogram:
 ./bamcov -w0 -mr NW_002477246.1:100 test.bam
 ```
 
-For high-res mode with 80 steps on the histogram y-axis instead of 20, use the flags `-mU`. To see if your terminal/font support it check with `./bamcov -v`.
+For high-res mode with 80 steps on the histogram y-axis instead of 20, use the flags `-mU`. To see if your terminal/font support it check with `./bamcov -v`. If the output looks fine without empty blocks, you are good to go to user the `-U` flag.
 
 Author: Florian P Breitwieser, based on code of `samtools depth` by Heng Li and samtools contributors.
 
