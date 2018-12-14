@@ -2,6 +2,10 @@
 CC=gcc
 CFLAGS=-Wall -lm -lhts -std=c99 $(LDFLAGS) $(CPPFLAGS) -I/usr/local/include -L/usr/local/lib
 
+ifneq ($(HTSLIB),)
+	CFLAGS+=-I$(HTSLIB)/include -L$(HTSLIB)/lib
+endif
+
 all: bamcov
 
 clean:
