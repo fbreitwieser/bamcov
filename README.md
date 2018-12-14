@@ -12,6 +12,7 @@ Make sure to clone the repository with `--recurse-submodules` to get the htslib,
 git clone --recurse-submodules https://github.com/fbreitwieser/bamcov
 cd bamcov
 make
+make test
 ```
 
 ## Usage
@@ -29,8 +30,11 @@ Show histogram output:
 
 Show specific region (requires BAM index):
 ```
-./bamcov -r chr1:100-1000 test.bam
+./bamcov -mr NW_002477246.1:1000-200000 test.bam
 ```
+![screenshot 2018-12-14 15 39 19](https://user-images.githubusercontent.com/516060/50026309-782ac600-ffb6-11e8-9676-258c5b0517db.png)
+
+For high-res mode with 80 steps on the histogram y-axis instead of 20, use the flags `-mU`. To see if your terminal/font support it check with `./bamcov -v`.
 
 Author: Florian P Breitwieser, based on code of `samtools depth` by Heng Li and samtools contributors.
 
