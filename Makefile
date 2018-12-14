@@ -37,13 +37,13 @@ test: bamcov
 	./bamcov -H test.sam | column -ts$$'\t'
 	./bamcov -m test.sam
 
-htslib:
-	git clone https://github.com/samtools/htslib
+htslib/Makefile:
+	git submodule update --init --recursive
 
-htslib/libhts.a: htslib
+htslib/libhts.a: htslib/Makefile
 	cd htslib && make libhts.a
 
-htslib/$(HTSLIB): htslib
+htslib/$(HTSLIB): htslib/Makefile
 	cd htslib && make $(HTSLIB)
 
 bamcov.tar.gz: bamcov bamcov.c README.md Makefile test.bam test.bam.bai

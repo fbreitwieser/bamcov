@@ -73,6 +73,8 @@ typedef struct {  // auxiliary data structure to hold stats on coverage
 // UTF8 specifies block characters in eights going from \u2581 (lower one eight block) to \u2588 (full block)
 //   https://en.wikipedia.org/wiki/Block_Elements
 const char* BLOCK_CHARS[8] = {"\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"};
+// In some terminals / with some fonts not all UTF8 block characters are supported (e.g. Putty). Use only half and full block for those
+const char* BLOCK_CHARS_NONUTF[2] = {"\u2584", "\u2588"};
 
 int read_file_list(const char *file_list, int *n, char **argv[]);
 
@@ -101,6 +103,7 @@ static int usage(int status) {
                     "  -m                show histogram instead of tabular output\n"
                     "  -w <int>          number of bins in histogram. Set to 0 to use terminal width [50]\n"
                     "  -r <chr:from-to>  Show region on chromosome chr. \n"
+                    "  -U                Full UTF8 mode for histogram for finer resolution\n"
                     "  -h                help (this page)\n"
                     "  -v                version of this command\n"
                     "\nGlobal options:\n");
@@ -206,7 +209,7 @@ void print_tabular_line(FILE *file_out, const bam_hdr_t *h, const stats_aux_t *s
 }
 
 void print_hist(FILE *file_out, const bam_hdr_t *h, const stats_aux_t *stats, const uint32_t *hist, 
-                const int hist_size) {
+                const int hist_size, const bool full_utf) {
     int i;
     bool show_percentiles = false;
     const int n_rows = 10;
@@ -250,13 +253,19 @@ void print_hist(FILE *file_out, const bam_hdr_t *h, const stats_aux_t *stats, co
         }
         for (col = 0; col < hist_size; ++col) {
             // get the difference in eights
-            int cur_val_diff = round(8 * (hist_d[col] - current_bin) / row_bin_size);
+
+            int nchars = full_utf? 8 : 2;
+
+            int cur_val_diff = round(nchars * (hist_d[col] - current_bin) / row_bin_size);
             if (cur_val_diff == 0) {
-                fputc('_', file_out);
+                fputc(' ', file_out);
             } else if (cur_val_diff > 0) {
-                if (cur_val_diff > 8)
-                    cur_val_diff = 8;
-                fprintf(file_out, "%s", BLOCK_CHARS[cur_val_diff-1]);
+                if (cur_val_diff > nchars)
+                    cur_val_diff = nchars;
+                if (full_utf) 
+                   fprintf(file_out, "%s", BLOCK_CHARS[cur_val_diff-1]);
+                else 
+                   fprintf(file_out, "%s", BLOCK_CHARS_NONUTF[cur_val_diff-1]);
             } else {
                 fputc(' ', file_out);
             }
@@ -320,6 +329,7 @@ int main_coverage(int argc, char *argv[]) {
     bool opt_print_tabular = true;
     bool opt_print_histogram = false;
     bool *covered_tids;
+    bool opt_full_utf = false;
 
     FILE *file_out = stdout;
 
@@ -334,9 +344,9 @@ int main_coverage(int argc, char *argv[]) {
     // parse the command line
     int c;
 #ifdef INSAMTOOLS
-    while ((c = getopt_long(argc, argv, "o:l:q:Q:hHw:vr:f:m", lopts, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "Uo:l:q:Q:hHw:vr:f:m", lopts, NULL)) != -1) {
 #else
-    while ((c = getopt(argc, argv, "o:l:q:Q:hHw:vr:f:m")) != -1) {
+    while ((c = getopt(argc, argv, "Uo:l:q:Q:hHw:vr:f:m")) != -1) {
 #endif
             switch (c) {
                 case 'o': opt_output_file = optarg; break;
@@ -347,6 +357,7 @@ int main_coverage(int argc, char *argv[]) {
                 case 'r': opt_reg = optarg; break;   // parsing a region requires a BAM header (strdup unnecessary)
                 case 'f': opt_file_list = optarg; break;
                 case 'm': opt_print_histogram = true; opt_print_tabular = false; break;
+                case 'U': opt_full_utf = true; break;
                 case 'H': opt_print_header = true; break;
                 case 'h': return usage(EXIT_SUCCESS);
                 case 'v': return version(EXIT_SUCCESS);
@@ -493,7 +504,7 @@ int main_coverage(int argc, char *argv[]) {
             if (stats->tid >= 0) {
                 set_read_counts(data, stats, n_bam_files);
                 if (opt_print_histogram) {
-                    print_hist(file_out, h, stats, hist, opt_n_bins);
+                    print_hist(file_out, h, stats, hist, opt_n_bins, opt_full_utf);
                     fputc('\n', file_out);
                 } else if (opt_print_tabular) {
                     print_tabular_line(file_out, h, stats);
@@ -554,7 +565,7 @@ int main_coverage(int argc, char *argv[]) {
     if (stats->tid != -1) {
         set_read_counts(data, stats, n_bam_files);
         if (opt_print_histogram) {
-            print_hist(file_out, h, stats, hist, opt_n_bins);
+            print_hist(file_out, h, stats, hist, opt_n_bins, opt_full_utf);
         } else if (opt_print_tabular) {
             print_tabular_line(file_out, h, stats);
         }
