@@ -70,8 +70,11 @@ typedef struct {  // auxiliary data structure to hold stats on coverage
     int bin_width;
 } stats_aux_t;
 
-int read_file_list(const char *file_list, int *n, char **argv[]);
+// UTF8 specifies block characters in eights going from \u2581 (lower one eight block) to \u2588 (full block)
+//   https://en.wikipedia.org/wiki/Block_Elements
+const char* BLOCK_CHARS[8] = {"\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"};
 
+int read_file_list(const char *file_list, int *n, char **argv[]);
 
 #ifndef INSAMTOOLS
 void print_error_errno(const char* name, const char* fmt, ...) {
@@ -127,6 +130,10 @@ static int version(int status) {
     "┌┐ ┌─┐┌┬┐┌─┐┌─┐┬  ┬\n"
     "├┴┐├─┤││││  │ │└┐┌┘\n"
     "└─┘┴ ┴┴ ┴└─┘└─┘ └┘   v%s\n", VERSION);
+    fprintf(stderr, "Block char test: ");
+    for (int i = 0; i < 8; ++i)
+        fprintf(stderr, "%s", BLOCK_CHARS[i]);
+    fprintf(stderr, "\n");
     return status;
 }
 
@@ -164,10 +171,6 @@ void set_read_counts(bam_aux_t **data, stats_aux_t *stats, int n_bam_files) {
         data[i]->summed_mapQ = 0;
     }
 }
-
-// UTF8 specifies block characters in eights going from \u2581 (lower one eight block) to \u2588 (full block)
-//   https://en.wikipedia.org/wiki/Block_Elements
-const char* BLOCK_CHARS[8] = {"\u2581", "\u2582", "\u2583", "\u2584", "\u2585", "\u2586", "\u2587", "\u2588"};
 
 // read one alignment from one BAM file
 static int read_bam(void *data, bam1_t *b) {
