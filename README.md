@@ -34,6 +34,11 @@ Show specific region (requires BAM index):
 ```
 ![screenshot 2018-12-14 15 39 19](https://user-images.githubusercontent.com/516060/50026309-782ac600-ffb6-11e8-9676-258c5b0517db.png)
 
+Use full window width for histogram:
+```
+./bamcov -w0 -mr NW_002477246.1:100 test.bam
+```
+
 For high-res mode with 80 steps on the histogram y-axis instead of 20, use the flags `-mU`. To see if your terminal/font support it check with `./bamcov -v`.
 
 Author: Florian P Breitwieser, based on code of `samtools depth` by Heng Li and samtools contributors.

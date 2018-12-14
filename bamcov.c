@@ -473,11 +473,15 @@ int main_coverage(int argc, char *argv[]) {
 
     bool reg_sets_end = false;
     if (opt_reg) {
+        stats->tid = data[0]->iter->tid;
         stats->beg = data[0]->iter->beg; // and to the parsed region coordinates
         stats->end = data[0]->iter->end;
-        stats->tid = data[0]->iter->tid;
+        if (stats->end == INT_MAX) {
+            stats->end = h->target_len[stats->tid];
+        } else {
+            reg_sets_end = true;
+        }
         stats->bin_width = (stats->end-stats->beg) / opt_n_bins;
-        reg_sets_end = stats->end != INT_MAX;
     } else {
         stats->tid = -1;
     }
