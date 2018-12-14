@@ -4,7 +4,7 @@
 ├┴┐├─┤││││  │ │└┐┌┘             of sequence coverage on the terminal
 └─┘┴ ┴┴ ┴└─┘└─┘ └┘ v0.1      
 ```
-This tool is based on [htslib](https://github.com/samtools/htslib) and may be integrated in [samtools](https://github.com/samtools/samtools) ([PR #992](https://github.com/samtools/samtools/pull/992)). This standalone version is for testing features, and will be maintained on its own.
+This tool is based on [htslib](https://github.com/samtools/htslib) and may be integrated in [samtools](https://github.com/samtools/samtools) ([PR #992](https://github.com/samtools/samtools/pull/992)). This standalone version will implement new features and will be maintained on its own.
 
 ## Installation
 Make sure to clone the repository with `--recurse-submodules` to get the htslib, otherwise it is necessary to type `git submodule update --init --recursive` in the cloned repository.
