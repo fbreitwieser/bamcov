@@ -55,8 +55,8 @@ typedef struct {  // auxiliary data structure to hold a BAM file
     unsigned int n_reads;  // records the number of reads seen in file
     unsigned int n_selected_reads; // records the number of reads passing filter
     unsigned long summed_mapQ; // summed mapQ of all reads passing filter
-    unsigned int fail_flags;
-    unsigned int required_flags;
+    int fail_flags;
+    int required_flags;
 } bam_aux_t;
 
 typedef struct {  // auxiliary data structure to hold stats on coverage
@@ -96,25 +96,26 @@ int read_file_list(const char *file_list, int *n, char **argv[]);
 
 static int usage(int status) {
     fprintf(stderr, "\nUsage: samtools coverage [options] in1.bam [in2.bam [...]]\n"
-                    "Options:\n"
-                    "  -o FILE           where to write output to [stdout]\n"
+                    "Input options:\n"
+                    "  -b FILE           Process files specified, one per line, from <file> instead of positional arguments.\n"
                     "  -l <int>          read length threshold - ignore reads shorter than <int> [0]\n"
                     "  -q <int>          base quality threshold [0]\n"
                     "  -Q <int>          mapping quality threshold [0]\n"
-                    "  -H                print a file header\n"
+                    "  --ff <int|str>    Filter flags: Omit all reads with bits in mask set. See samtools flags command for explanations [default: UNMAP,SECONDARY,QCFAIL,DUP]\n"
+                    "  --rf <int|str>    Required flags: Omit all reads which do not have all bits in mask set []\n"
+                    "\nOutput options:\n"
+                    "  -o FILE           where to write output to [stdout]\n"
+                    "  -H                print a header in tabular mode\n"
                     "  -m                show histogram instead of tabular output\n"
+                    "  -U                Full UTF8 mode for histogram for finer resolution\n"
                     "  -w <int>          number of bins in histogram. Set to 0 to use terminal width [50]\n"
                     "  -r <chr:from-to>  Show region on chromosome chr. \n"
-                    "  -U                Full UTF8 mode for histogram for finer resolution\n"
+                    "\nGeneral options:\n"
                     "  -h                help (this page)\n"
-                    "  -v                version of this command\n"
-                    "  --ff <int>        Omit all reads with bits in <int> set (default: unmapped, secondary, qcfail, and duplicates)\n"
-                    "  --rf <int>        Omit all reads which do not have all bits in <int> set.\n"
-                    "  -b FILE           Process files specified, one per line, from <file> instead of positional arguments.\n"
-                    "  -v                version of this command\n"
-                    "\nGlobal options:\n");
+                    "  -v                version of this command\n");
 
 #ifdef INSAMTOOLS
+    fprintf(stderr, "\nGlobal options:\n");
     sam_global_opt_help(stderr, "-.--.-");
 #endif
 
@@ -187,9 +188,9 @@ static int read_bam(void *data, bam1_t *b) {
     int ret;
     while (1) {
         if((ret = aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b)) < 0) break;
-        if ( (b->core.flag & aux->fail_flags) ||
-             ((b->core.flag & aux->required_flags) != aux->required_flags) ) continue;
         ++aux->n_reads;
+        if ( aux->fail_flags && b->core.flag & aux->fail_flags ) continue;
+        if ( aux->required_flags && !(b->core.flag & aux->required_flags) ) continue;
         if ( b->core.qual < aux->min_mapQ ) continue;
         if ( aux->min_len && bam_cigar2qlen(b->core.n_cigar, bam_get_cigar(b)) < aux->min_len ) continue;
         ++aux->n_selected_reads;
@@ -348,7 +349,7 @@ int main_coverage(int argc, char *argv[]) {
 #ifdef INSAMTOOLS
         SAM_OPT_GLOBAL_OPTIONS('-', 0, '-', '-', 0, '-'),
 #endif
-        {"rf", required_argument, NULL, 1},   // require flag
+        {"rf", required_argument, NULL, 1}, // require flag
         {"ff", required_argument, NULL, 2}, // filter flag
         { NULL, 0, NULL, 0 }
     };
@@ -359,12 +360,12 @@ int main_coverage(int argc, char *argv[]) {
             switch (c) {
                 case 1:
                         if ((required_flags = bam_str2flag(optarg)) < 0) {
-                             fprintf(stderr,"Could not parse --rf %s\n", optarg); return 1;
-                         }
+                             fprintf(stderr,"Could not parse --rf %s\n", optarg); return EXIT_FAILURE;
+                         }; break;
                 case 2:
                         if ((fail_flags = bam_str2flag(optarg)) < 0) {
-                             fprintf(stderr,"Could not parse --ff %s\n", optarg); return 1;
-                         }
+                             fprintf(stderr,"Could not parse --ff %s\n", optarg); return EXIT_FAILURE;
+                         }; break;
                 case 'o': opt_output_file = optarg; break;
                 case 'l': opt_min_len = atoi(optarg); break;
                 case 'q': opt_min_baseQ = atoi(optarg); break;
