@@ -34,8 +34,8 @@ bamcov-dynamic: bamcov.c htslib/$(HTSLIB)
 	$(CC) $(CCFLAGS) $(INCLUDE) -o $@ bamcov.c $(CFLAGS) -Lhtslib -lhts
 
 test: bamcov
-	./bamcov -H test.sam | column -ts$$'\t'
-	./bamcov -m test.sam
+	./bamcov -H test.bam | column -ts$$'\t'
+	./bamcov -m test.bam
 
 htslib/Makefile:
 	git submodule update --init --recursive
