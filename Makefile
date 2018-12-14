@@ -1,6 +1,7 @@
 
 CC=gcc
-CFLAGS=-Wall -lm -std=c99
+CFLAGS=-Wall -lm -std=c99 -Lhtslib
+INCLUDE=-Ihtslib
 
 all: bamcov
 
@@ -10,12 +11,15 @@ clean:
 html-header.hpp: bamcov.html
 	xxd -i $^ > $@
 
-bamcov: bamcov.c
-	$(CC) $(CCFLAGS) -lhts -o $@ $^ $(LDFLAGS) $(CFLAGS) $(CPPFLAGS)
+bamcov: bamcov.c libhts.so
+	$(CC) $(CCFLAGS) $(INCLUDE) -o $@ $^ $(LDFLAGS) $(CFLAGS) $(CPPFLAGS) -lhts
 
 test: bamcov
 	./bamcov -H test.sam | column -ts$$'\t'
 	./bamcov -m test.sam
+
+libhts.so:
+	cd htslib && make libhts.so && cp libhts.so* .. && cd ..
 
 bamcov.tar.gz: bamcov.c bamcov REPORT README task_CPP_prog.bam
 	tar zcvf $@ $^

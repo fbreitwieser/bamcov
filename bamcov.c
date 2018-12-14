@@ -55,6 +55,7 @@ typedef struct {  // auxiliary data structure to hold a BAM file
     unsigned int n_reads;  // records the number of reads seen in file
     unsigned int n_selected_reads; // records the number of reads passing filter
     unsigned long summed_mapQ; // summed mapQ of all reads passing filter
+    unsigned int fail_flags;
 } bam_aux_t;
 
 typedef struct {  // auxiliary data structure to hold stats on coverage
@@ -99,6 +100,9 @@ static int usage(int status) {
                     "  -w <int>          number of bins in histogram. Set to 0 to use terminal width [50]\n"
                     "  -r <chr:from-to>  Show region on chromosome chr. \n"
                     "  -h                help (this page)\n"
+                    "  -v                version of this command\n"
+                    "  -a                Fail all reads with bits in <int> set (default: unmapped, secondary, qcfail, and duplicates)\n"
+                    "  -A                Remove all bits in <int> from filter flag, allowing one to collect coverage for secondary, duplicate, or reads failing QC.\n"
                     "  -v                version of this command\n"
                     "\nGlobal options:\n");
 
@@ -174,9 +178,8 @@ static int read_bam(void *data, bam1_t *b) {
     bam_aux_t *aux = (bam_aux_t*)data; // data in fact is a pointer to an auxiliary structure
     int ret;
     while (1) {
-        ret = aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b);
-        if ( ret<0 ) break;
-        if ( b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
+        if((ret = aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b)) < 0) break;
+        if ( b->core.flag & aux->fail_flags ) continue;
         ++aux->n_reads;
         if ( (int)b->core.qual < aux->min_mapQ ) continue;
         if ( aux->min_len && bam_cigar2qlen(b->core.n_cigar, bam_get_cigar(b)) < aux->min_len ) continue;
@@ -309,6 +312,7 @@ int main_coverage(int argc, char *argv[]) {
     char *opt_reg = 0; // specified region
     char *opt_file_list = NULL;
     int n_bam_files = 0;
+    int fail_flags = (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP); // Default fail flags
 
     int *n_plp;
     bam_hdr_t *h = NULL; // BAM header of the 1st input
@@ -331,11 +335,13 @@ int main_coverage(int argc, char *argv[]) {
     // parse the command line
     int c;
 #ifdef INSAMTOOLS
-    while ((c = getopt_long(argc, argv, "o:l:q:Q:hHw:vr:f:m", lopts, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "o:l:q:Q:hHw:vr:f:a:A:m", lopts, NULL)) != -1) {
 #else
-    while ((c = getopt(argc, argv, "o:l:q:Q:hHw:vr:f:m")) != -1) {
+    while ((c = getopt(argc, argv, "o:l:q:Q:hHw:vr:f:a:A:m")) != -1) {
 #endif
             switch (c) {
+                case 'a': fail_flags |= atoi(optarg); break;
+                case 'A': fail_flags &= (~atoi(optarg)); break;
                 case 'o': opt_output_file = optarg; break;
                 case 'l': opt_min_len = atoi(optarg); break;
                 case 'q': opt_min_baseQ = atoi(optarg); break;
@@ -425,6 +431,7 @@ int main_coverage(int argc, char *argv[]) {
         data[i]->min_mapQ = opt_min_mapQ;            // set the mapQ filter
         data[i]->min_len  = opt_min_len;             // set the qlen filter
         data[i]->hdr = sam_hdr_read(data[i]->fp);    // read the BAM header
+        data[i]->fail_flags = fail_flags;
         if (data[i]->hdr == NULL) {
             print_error_errno("coverage", "Couldn't read header for \"%s\"", argv[optind+i]);
             status = EXIT_FAILURE;
