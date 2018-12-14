@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=-Wall -lm -std=c99
+CFLAGS=-Wall -lm -lhts -std=c99 $(LDFLAGS) $(CPPFLAGS) -I/usr/local/include -L/usr/local/lib
 
 all: bamcov
 
@@ -11,7 +11,7 @@ html-header.hpp: bamcov.html
 	xxd -i $^ > $@
 
 bamcov: bamcov.c
-	$(CC) $(CCFLAGS) -lhts -o $@ $^ $(LDFLAGS) $(CFLAGS) $(CPPFLAGS)
+	$(CC) $(CCFLAGS) -o $@ $^ $(CFLAGS)
 
 test: bamcov
 	./bamcov -H test.sam | column -ts$$'\t'
