@@ -1,7 +1,7 @@
 
-```
-┌┐ ┌─┐┌┬┐┌─┐┌─┐┬  ┬       Quick calculation and visualization
-├┴┐├─┤││││  │ │└┐┌┘       of sequence coverage on the terminal
+```  
+┌┐ ┌─┐┌┬┐┌─┐┌─┐┬  ┬              Quick calculation and visualization
+├┴┐├─┤││││  │ │└┐┌┘             of sequence coverage on the terminal
 └─┘┴ ┴┴ ┴└─┘└─┘ └┘ v0.1      
 ```
 This tool is based on [htslib](https://github.com/samtools/htslib) and may be integrated in [samtools](https://github.com/samtools/samtools) ([PR #992](https://github.com/samtools/samtools/pull/992)). This standalone version is for testing new code prior to submitting it to samtools.
