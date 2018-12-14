@@ -1,6 +1,6 @@
 
-CXX=gcc
-EXTRA_FLAGS=
+CC=gcc
+CFLAGS=-Wall -lm -std=c99
 
 all: bamcov
 
@@ -11,7 +11,7 @@ html-header.hpp: bamcov.html
 	xxd -i $^ > $@
 
 bamcov: bamcov.c
-	$(CXX) $(EXTRA_FLAGS) -lhts -o $@ $^
+	$(CC) $(CCFLAGS) -lhts -o $@ $^ $(LDFLAGS) $(CFLAGS) $(CPPFLAGS)
 
 test: bamcov
 	./bamcov -H test.sam | column -ts$$'\t'

@@ -29,6 +29,7 @@ DEALINGS IN THE SOFTWARE.  */
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <sys/ioctl.h>
 
 #ifdef INSAMTOOLS
@@ -317,7 +318,6 @@ int main_coverage(int argc, char *argv[]) {
     bool opt_print_histogram = false;
     bool *covered_tids;
 
-    int current_tid = -1;
     FILE *file_out = stdout;
 
 #ifdef INSAMTOOLS
@@ -341,7 +341,7 @@ int main_coverage(int argc, char *argv[]) {
                 case 'q': opt_min_baseQ = atoi(optarg); break;
                 case 'Q': opt_min_mapQ = atoi(optarg); break;
                 case 'w': opt_n_bins = atoi(optarg); break;
-                case 'r': opt_reg = strdup(optarg); break;   // parsing a region requires a BAM header
+                case 'r': opt_reg = optarg; break;   // parsing a region requires a BAM header (strdup unnecessary)
                 case 'f': opt_file_list = optarg; break;
                 case 'm': opt_print_histogram = true; opt_print_tabular = false; break;
                 case 'H': opt_print_header = true; break;
