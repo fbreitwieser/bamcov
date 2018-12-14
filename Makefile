@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=-std=c99 -Wall -lm -lz -llzma -lbz2
+CFLAGS=-std=c99 -Wall -lm -lz -llzma -lbz2 -pthread
 INCLUDE=-Ihtslib -Lhtslib
 
 ## From htslib Makefile: specify shlib flavor based on platform
@@ -19,7 +19,7 @@ else
 HTSLIB=libhts.so
 endif
 
-all: bamcov bamcov-static
+all: bamcov
 
 clean:
 	rm -v bamcov
@@ -27,11 +27,12 @@ clean:
 html-header.hpp: bamcov.html
 	xxd -i $^ > $@
 
-bamcov: bamcov.c htslib/$(HTSLIB)
+bamcov: bamcov.c htslib/libhts.a
+	gcc -Ihtslib -o $@ $^ $(CFLAGS)
+
+bamcov-dynamic: bamcov.c htslib/$(HTSLIB)
 	$(CC) $(CCFLAGS) $(INCLUDE) -o $@ bamcov.c $(CFLAGS) -lhts
 
-bamcov-static: bamcov.c htslib/libhts.a
-	gcc -Ihtslib -o $@ $^ $(CFLAGS)
 
 test: bamcov
 	./bamcov -H test.sam | column -ts$$'\t'
