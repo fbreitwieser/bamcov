@@ -50,11 +50,13 @@ typedef struct {  // auxiliary data structure to hold a BAM file
     samFile *fp;     // file handle
     bam_hdr_t *hdr;  // file header
     hts_itr_t *iter; // iterator to a region - NULL for us by default
-    int min_mapQ;    // mapQ filter
+    unsigned min_mapQ;    // mapQ filter
     int min_len;     // length filter
     unsigned int n_reads;  // records the number of reads seen in file
     unsigned int n_selected_reads; // records the number of reads passing filter
     unsigned long summed_mapQ; // summed mapQ of all reads passing filter
+    unsigned int fail_flags;
+    unsigned int required_flags;
 } bam_aux_t;
 
 typedef struct {  // auxiliary data structure to hold stats on coverage
@@ -105,6 +107,10 @@ static int usage(int status) {
                     "  -r <chr:from-to>  Show region on chromosome chr. \n"
                     "  -U                Full UTF8 mode for histogram for finer resolution\n"
                     "  -h                help (this page)\n"
+                    "  -v                version of this command\n"
+                    "  --ff <int>        Omit all reads with bits in <int> set (default: unmapped, secondary, qcfail, and duplicates)\n"
+                    "  --rf <int>        Omit all reads which do not have all bits in <int> set.\n"
+                    "  -b FILE           Process files specified, one per line, from <file> instead of positional arguments.\n"
                     "  -v                version of this command\n"
                     "\nGlobal options:\n");
 
@@ -180,11 +186,11 @@ static int read_bam(void *data, bam1_t *b) {
     bam_aux_t *aux = (bam_aux_t*)data; // data in fact is a pointer to an auxiliary structure
     int ret;
     while (1) {
-        ret = aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b);
-        if ( ret<0 ) break;
-        if ( b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
+        if((ret = aux->iter? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b)) < 0) break;
+        if ( (b->core.flag & aux->fail_flags) ||
+             ((b->core.flag & aux->required_flags) != aux->required_flags) ) continue;
         ++aux->n_reads;
-        if ( (int)b->core.qual < aux->min_mapQ ) continue;
+        if ( b->core.qual < aux->min_mapQ ) continue;
         if ( aux->min_len && bam_cigar2qlen(b->core.n_cigar, bam_get_cigar(b)) < aux->min_len ) continue;
         ++aux->n_selected_reads;
         aux->summed_mapQ += b->core.qual;
@@ -321,6 +327,8 @@ int main_coverage(int argc, char *argv[]) {
     char *opt_reg = 0; // specified region
     char *opt_file_list = NULL;
     int n_bam_files = 0;
+    int fail_flags = (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP); // Default fail flags
+    int required_flags = 0;
 
     int *n_plp;
     bam_hdr_t *h = NULL; // BAM header of the 1st input
@@ -335,27 +343,35 @@ int main_coverage(int argc, char *argv[]) {
 
 #ifdef INSAMTOOLS
     sam_global_args ga = SAM_GLOBAL_ARGS_INIT;
+#endif
     static const struct option lopts[] = {
+#ifdef INSAMTOOLS
         SAM_OPT_GLOBAL_OPTIONS('-', 0, '-', '-', 0, '-'),
+#endif
+        {"rf", required_argument, NULL, 1},   // require flag
+        {"ff", required_argument, NULL, 2}, // filter flag
         { NULL, 0, NULL, 0 }
     };
-#endif
 
     // parse the command line
     int c;
-#ifdef INSAMTOOLS
-    while ((c = getopt_long(argc, argv, "Uo:l:q:Q:hHw:vr:f:m", lopts, NULL)) != -1) {
-#else
-    while ((c = getopt(argc, argv, "Uo:l:q:Q:hHw:vr:f:m")) != -1) {
-#endif
+    while ((c = getopt_long(argc, argv, "o:l:q:Q:hHw:vr:b:mU", lopts, NULL)) != -1) {
             switch (c) {
+                case 1:
+                        if ((required_flags = bam_str2flag(optarg)) < 0) {
+                             fprintf(stderr,"Could not parse --rf %s\n", optarg); return 1;
+                         }
+                case 2:
+                        if ((fail_flags = bam_str2flag(optarg)) < 0) {
+                             fprintf(stderr,"Could not parse --ff %s\n", optarg); return 1;
+                         }
                 case 'o': opt_output_file = optarg; break;
                 case 'l': opt_min_len = atoi(optarg); break;
                 case 'q': opt_min_baseQ = atoi(optarg); break;
                 case 'Q': opt_min_mapQ = atoi(optarg); break;
                 case 'w': opt_n_bins = atoi(optarg); break;
                 case 'r': opt_reg = optarg; break;   // parsing a region requires a BAM header (strdup unnecessary)
-                case 'f': opt_file_list = optarg; break;
+                case 'b': opt_file_list = optarg; break;
                 case 'm': opt_print_histogram = true; opt_print_tabular = false; break;
                 case 'U': opt_full_utf = true; break;
                 case 'H': opt_print_header = true; break;
@@ -439,6 +455,8 @@ int main_coverage(int argc, char *argv[]) {
         data[i]->min_mapQ = opt_min_mapQ;            // set the mapQ filter
         data[i]->min_len  = opt_min_len;             // set the qlen filter
         data[i]->hdr = sam_hdr_read(data[i]->fp);    // read the BAM header
+        data[i]->fail_flags = fail_flags;
+        data[i]->required_flags = required_flags;
         if (data[i]->hdr == NULL) {
             print_error_errno("coverage", "Couldn't read header for \"%s\"", argv[optind+i]);
             status = EXIT_FAILURE;
