@@ -2,7 +2,6 @@
  
    Author: Florian P Breitwieser <florian.bw@gmail.com>
 
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -31,16 +30,14 @@ DEALINGS IN THE SOFTWARE.  */
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
+#include "htslib/sam.h"
+#include "htslib/hts.h"
 
 #ifdef INSAMTOOLS
 #include <config.h>
-#include "htslib/sam.h"
-#include "htslib/hts.h"
 #include "samtools.h"
 #include "sam_opts.h"
 #else
-#include <htslib/sam.h>
-#include <htslib/hts.h>
 #define _MAIN_BAMCOV
 #endif
 
@@ -78,8 +75,6 @@ const char* BLOCK_CHARS[8] = {"\u2581", "\u2582", "\u2583", "\u2584", "\u2585", 
 // In some terminals / with some fonts not all UTF8 block characters are supported (e.g. Putty). Use only half and full block for those
 const char* BLOCK_CHARS_NONUTF[2] = {"\u2584", "\u2588"};
 
-int read_file_list(const char *file_list, int *n, char **argv[]);
-
 #ifndef INSAMTOOLS
 void print_error_errno(const char* name, const char* fmt, ...) {
     va_list args;
@@ -97,7 +92,9 @@ int read_file_list(const char *file_list, int *n, char **argv[]);
 static int usage(int status) {
     fprintf(stderr, "Usage: bamcov [options] in1.bam [in2.bam [...]]\n\n"
                     "Input options:\n"
+#ifdef INSAMTOOLS
                     "  -b FILE           Process files specified, one per line, from <file> instead of positional arguments.\n"
+#endif
                     "  -l <int>          read length threshold - ignore reads shorter than <int> [0]\n"
                     "  -q <int>          base quality threshold [0]\n"
                     "  -Q <int>          mapping quality threshold [0]\n"
@@ -491,6 +488,7 @@ int main_coverage(int argc, char *argv[]) {
     covered_tids = calloc(h->n_targets, sizeof(bool));
     stats_aux_t *stats = calloc(1, sizeof(stats_aux_t));
 
+    int this_seq_n_bins = opt_n_bins;
     bool reg_sets_end = false;
     if (opt_reg) {
         stats->tid = data[0]->iter->tid;
@@ -501,7 +499,8 @@ int main_coverage(int argc, char *argv[]) {
         } else {
             reg_sets_end = true;
         }
-        stats->bin_width = (stats->end-stats->beg) / opt_n_bins;
+        this_seq_n_bins = opt_n_bins > stats->end-stats->beg? stats->end-stats->beg : opt_n_bins;
+        stats->bin_width = (stats->end-stats->beg) / this_seq_n_bins;
     } else {
         stats->tid = -1;
     }
@@ -528,7 +527,7 @@ int main_coverage(int argc, char *argv[]) {
             if (stats->tid >= 0) {
                 set_read_counts(data, stats, n_bam_files);
                 if (opt_print_histogram) {
-                    print_hist(file_out, h, stats, hist, opt_n_bins, opt_full_utf);
+                    print_hist(file_out, h, stats, hist, this_seq_n_bins, opt_full_utf);
                     fputc('\n', file_out);
                 } else if (opt_print_tabular) {
                     print_tabular_line(file_out, h, stats);
@@ -542,7 +541,7 @@ int main_coverage(int argc, char *argv[]) {
                 memset(stats, 0, sizeof(stats_aux_t));
 
                 if (compute_histogram)
-                    memset(hist, 0, opt_n_bins*sizeof(uint32_t));
+                    memset(hist, 0, this_seq_n_bins*sizeof(uint32_t));
             }
 
             stats->tid = tid;
@@ -550,8 +549,10 @@ int main_coverage(int argc, char *argv[]) {
             if (!reg_sets_end)
                 stats->end = h->target_len[tid];
 
-            if (compute_histogram) 
-                stats->bin_width = (stats->end-stats->beg) / opt_n_bins;
+            if (compute_histogram) {
+                this_seq_n_bins = opt_n_bins > stats->end-stats->beg? stats->end-stats->beg : opt_n_bins;
+                stats->bin_width = (stats->end-stats->beg) / this_seq_n_bins;
+            }
         }
         if (pos < stats->beg || pos >= stats->end) continue; // out of range; skip
         if (tid >= h->n_targets) continue;     // diff number of @SQ lines per file?
@@ -581,7 +582,7 @@ int main_coverage(int argc, char *argv[]) {
         }
         if (count_base) {
             ++(stats->n_covered_bases);
-            if (compute_histogram && current_bin < opt_n_bins)
+            if (compute_histogram && current_bin < this_seq_n_bins)
                 ++(hist[current_bin]); // Histogram based on breadth of coverage
         }
     }
@@ -589,7 +590,7 @@ int main_coverage(int argc, char *argv[]) {
     if (stats->tid != -1) {
         set_read_counts(data, stats, n_bam_files);
         if (opt_print_histogram) {
-            print_hist(file_out, h, stats, hist, opt_n_bins, opt_full_utf);
+            print_hist(file_out, h, stats, hist, this_seq_n_bins, opt_full_utf);
         } else if (opt_print_tabular) {
             print_tabular_line(file_out, h, stats);
         }
