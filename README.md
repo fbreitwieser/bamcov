@@ -40,6 +40,12 @@ Use full window width for histogram:
 
 For high-res mode with 80 steps on the histogram y-axis instead of 20, use the flags `-mU`. To see if your terminal/font support it check with `./bamcov -v`. If the output looks fine without empty blocks, you are good to go to user the `-U` flag.
 
+## Planned features
+ - BED support
+ - Show average coverage instead of percent covered in histogram
+ 
+ Please feel free to open an issue with a feature request or comment on an existing one.
+
 ## Info
 
 This tool is based on [htslib](https://github.com/samtools/htslib) and may be integrated in [samtools](https://github.com/samtools/samtools) ([PR #992](https://github.com/samtools/samtools/pull/992)). This standalone version will implement new features and will be maintained on its own.
