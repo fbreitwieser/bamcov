@@ -6,13 +6,13 @@
 ```
 
 ## Installation
-Make sure to clone the repository with `--recurse-submodules` to get the htslib, otherwise it is necessary to type `git submodule update --init --recursive` in the cloned repository.
 ```
 git clone --recurse-submodules https://github.com/fbreitwieser/bamcov
 cd bamcov
 make
 make test
 ```
+Make sure to clone the repository with `--recurse-submodules` to get the htslib, otherwise it is necessary to type `git submodule update --init --recursive` in the cloned repository.
 
 ## Usage
 Show tabular output (default) with header:
