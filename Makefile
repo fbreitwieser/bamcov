@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=-std=c99 -Wall -lm -lz -llzma -lbz2 -pthread
+CFLAGS=-std=c99 -Wall -lm -lz -llzma -lbz2 -lcurl -pthread
 INCLUDE=-Ihtslib
 
 ## From htslib Makefile: specify shlib flavor based on platform
